@@ -1,13 +1,61 @@
-public class Server {
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.security.InvalidParameterException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
-  private static void parseInventoryFile(String fileName)
+public class Server
+{
+    private Set<Item> inventory;
+
+  private static Set<Item> parseInventoryFile(String fileName)
   {
-    if(fileName == null | fileName.isEmpty())
-    {
-      System.err.println("Please provide a valid filename");
-      System.exit(-1);
-    }
+
+
+      if(fileName == null | fileName.isEmpty())
+      {
+        System.err.println("Please provide a valid filename");
+        System.exit(-1);
+      }
+
+      // Read the file
+      try
+      {
+          FileReader invFile = new FileReader(fileName);
+          BufferedReader invBuff = new BufferedReader(invFile);
+          String invLine = null;
+          Set<Item> items = new HashSet<>();
+          while ((invLine = invBuff.readLine()) != null)
+          {
+              if (invLine.length() > 0)
+              {
+                  String[] itemArr = invLine.split("\\s+");
+                  if (itemArr.length == 2)
+                  {
+                      try
+                      {
+                          Item newItem = new Item(itemArr[0], Integer.parseInt(itemArr[1]));
+                          items.add(newItem);
+                      }catch (Exception e)
+                      {
+                          System.err.println("Unable to parse inventory line");
+                          e.printStackTrace();
+                      }
+                  }
+              }
+          }
+          return items;
+      }catch(IOException e)
+      {
+          System.err.println("Unable to read inventory file");
+          e.printStackTrace();
+      }
+      return new HashSet<>();
   }
+
   public static void main (String[] args) {
     int tcpPort;
     int udpPort;
@@ -24,13 +72,54 @@ public class Server {
     String fileName = args[2];
 
     // parse the inventory file
-    parseInventoryFile(fileName);
+    Set<Item> inventory = parseInventoryFile(fileName);
 
     // TODO: handle request from clients
   }
 
-  private class Item
+  private static class Item
   {
+      String name;
+      int quantity;
+      Lock lock = new ReentrantLock();
+
+
+      public Item(String name, int quantity)
+      {
+          if(name == null || quantity < 0)
+          {
+            throw new InvalidParameterException("Item must have valid name and non negative quantity");
+          }
+          this.name = name;
+          this.quantity = quantity;
+      }
+
+      public int getQuantity()
+      {
+
+          lock.lock();
+          int value = this.quantity;
+          lock.unlock();
+          return value;
+      }
+
+      // Update the quantity of an item
+      // Do it in synchronized block
+      public void purchaseQuantiy(int toPurchase) throws InvalidParameterException
+      {
+          lock.lock();
+          int currQuantity = this.quantity;
+          if(toPurchase > currQuantity)
+          {
+              lock.unlock();
+              throw new InvalidParameterException("Not enough items to buy purchase");
+          }
+          // Update the new quantity
+          quantity = quantity - toPurchase;
+          // Release the lock after updating the quantity
+          lock.unlock();
+
+      }
 
   }
 }
