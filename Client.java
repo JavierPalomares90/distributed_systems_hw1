@@ -1,10 +1,18 @@
 import java.util.Scanner;
 
 public class Client {
-  public static void main (String[] args) {
+
+  private static final String TCP_MODE = "T";
+  private static final String UDP_MODE = "U";
+
+  public static void main (String[] args) 
+  {
     String hostAddress;
     int tcpPort;
     int udpPort;
+    // Default protocol is TCP
+    String ipProtocol = TCP_MODE;
+
 
     if (args.length != 3) {
       System.out.println("ERROR: Provide 3 arguments");
@@ -24,9 +32,19 @@ public class Client {
       String[] tokens = cmd.split(" ");
 
       if (tokens[0].equals("setmode")) {
-        // TODO: set the mode of communication for sending commands to the server 
-        // and display the name of the protocol that will be used in future
+        if (tokens.length < 2)
+        {
+          System.out.println("Usage: setmode <T|U>");
+          continue;
+        }
+        String mode = tokens[1];
+        if(UDP_MODE.equals(mode))
+        {
+          ipProtocol = UDP_MODE;
+        }
+        System.out.println("Setmode to " + ipProtocol);
       }
+
       else if (tokens[0].equals("purchase")) {
         // TODO: send appropriate command to the server and display the
         // appropriate responses form the server
