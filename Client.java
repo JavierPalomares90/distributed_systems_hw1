@@ -1,4 +1,9 @@
 import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -6,6 +11,8 @@ public class Client {
 
   private static final String TCP_MODE = "T";
   private static final String UDP_MODE = "U";
+  private static String ipProtocol = TCP_MODE;
+  private static int BUF_LEN = 1024;
 
   private static void setMode(String[] tokens)
   {
@@ -93,18 +100,18 @@ public class Client {
     {
       //Send message
       byte[] payload = new byte[command.length()];
-      payload = cmd.getBytes();
+      payload = command.getBytes();
       InetAddress inetAddy = InetAddress.getByName(hostAddress);
       // Let the OS pick an outbound port
       DatagramSocket udpOutboundSocket = new DatagramSocket();
       // Listen on UDP port for inbound
       DatagramSocket udpInboundSocket = new DatagramSocket(port);
-      DatagramPacket sPacket = new DatagramPacket(payload, payload.length, inetAddy, udpPort);
+      DatagramPacket sPacket = new DatagramPacket(payload, payload.length, inetAddy, port);
       udpOutboundSocket.send(sPacket);
       udpOutboundSocket.close();
 
       //Receive Reply:
-      byte[] udpBuff = new byte[bufferLen];
+      byte[] udpBuff = new byte[BUF_LEN];
       DatagramPacket rPacket = new DatagramPacket(udpBuff,udpBuff.length);
       udpInboundSocket.receive(rPacket);
       String msgData = new String(rPacket.getData());                            
@@ -121,11 +128,11 @@ public class Client {
   private static void sendCmdOverTcp(String command, String hostAddress, int port)
   {
       // Send the purchase over TCP
-      Socket tcpSocket;
+      Socket tcpSocket = null;
       try
       {
         // Get the socket
-        tcpSocket = new Socket(hostAddress, tcpPort);
+        tcpSocket = new Socket(hostAddress, port);
         PrintWriter outputWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
         BufferedReader inputReader = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
         // Write the purchase message
