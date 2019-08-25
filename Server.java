@@ -1,4 +1,13 @@
 public class Server {
+
+  private static void parseInventoryFile(String fileName)
+  {
+    if(fileName == null | fileName.isEmpty())
+    {
+      System.err.println("Please provide a valid filename");
+      System.exit(-1);
+    }
+  }
   public static void main (String[] args) {
     int tcpPort;
     int udpPort;
@@ -15,7 +24,13 @@ public class Server {
     String fileName = args[2];
 
     // parse the inventory file
+    parseInventoryFile(fileName);
 
     // TODO: handle request from clients
+  }
+
+  private class Item
+  {
+
   }
 }

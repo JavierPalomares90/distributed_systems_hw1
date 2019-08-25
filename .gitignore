@@ -1,2 +1,9 @@
 .vscode/*
+.project
+.project/*
+out/*
+*.iml
 *.class
+.classpath
+.idea/*
+.settings/*

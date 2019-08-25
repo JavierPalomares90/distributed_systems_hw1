@@ -11,26 +11,24 @@ public class Client {
 
   private static final String TCP_MODE = "T";
   private static final String UDP_MODE = "U";
-  private static String ipProtocol = TCP_MODE;
   private static int BUF_LEN = 1024;
 
-  private static void setMode(String[] tokens)
+  private static String setMode(String[] tokens)
   {
       if (tokens.length < 2)
       {
         System.out.println("Usage: setmode <T|U>");
-        return;
+        return null;
       }
       String mode = tokens[1];
       if(UDP_MODE.equals(mode))
       {
-        ipProtocol = UDP_MODE;
+        return UDP_MODE;
       }else
       {
         // default to TCP Protocol
-        ipProtocol = TCP_MODE;
+        return TCP_MODE;
       }
-      System.out.println("Setmode to " + ipProtocol);
   }
 
 
@@ -203,7 +201,13 @@ public class Client {
 
       if (tokens[0].equals("setmode")) {
         // Set the ip protocol mode
-        setMode(tokens);
+        String mode = setMode(tokens);
+        if(mode != null)
+        {
+            ipProtocol = mode;
+        }
+
+        System.out.println("Setmode to " + ipProtocol);
       } else
       {
         // Send a command to the server
