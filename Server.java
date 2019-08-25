@@ -74,7 +74,10 @@ public class Server
     // parse the inventory file
     Set<Item> inventory = parseInventoryFile(fileName);
 
-    // TODO: handle request from clients
+    // Parse messages from clients
+    ServerThread s = new ServerThread(tcpPort,udpPort,inventory);
+    new Thread(s).start();
+
   }
 
   private static class Item
@@ -120,6 +123,26 @@ public class Server
           lock.unlock();
 
       }
+  }
+
+
+  private static class ServerThread implements Runnable
+  {
+      private int tcpPort;
+      private int udpPort;
+      private Set<Item> inventory;
+
+      public ServerThread(int tcpPort, int udpPort, Set<Item> inventory)
+      {
+          this.tcpPort = tcpPort;
+          this.udpPort = udpPort;
+          this.inventory = inventory;
+      }
+
+      public void run(){
+          //TODO: Finish impl
+      }
+
 
   }
 }
