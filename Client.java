@@ -41,6 +41,10 @@ public class Client {
         if(UDP_MODE.equals(mode))
         {
           ipProtocol = UDP_MODE;
+        }else
+        {
+          // default to TCP Protocol
+          ipProtocol = TCP_MODE;
         }
         System.out.println("Setmode to " + ipProtocol);
       }
