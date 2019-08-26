@@ -1,6 +1,4 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.InvalidParameterException;
@@ -131,14 +129,59 @@ public class Server
   private static class ClientWorkerThread implements  Runnable
   {
       Socket s;
-      public ClientWorkerThread(Socket s)
+      Set<Item> inventory;
+      public ClientWorkerThread(Socket s,Set<Item> inventory)
       {
           this.s = s;
+          this.inventory = inventory;
+      }
+
+      private String processMessage(String[] msg)
+      {
+          //TODO: Complete impl
+          return null;
+
       }
 
       public void run()
       {
-          //TODO: Complete impl
+          // Read the message from the client
+          try
+          {
+              //We have received a TCP socket from the client.  Receive message and reply.
+              BufferedReader inputReader = new BufferedReader(new InputStreamReader(s.getInputStream()));
+              boolean autoFlush = true;
+              PrintWriter outputWriter = new PrintWriter(s.getOutputStream(), autoFlush);
+              String inputLine = inputReader.readLine();
+              if (inputLine != null && inputLine.length() > 0) {
+                  String[] msgArray = inputLine.split("\\s+");
+                  String response = processMessage(msgArray);
+                  if(response != null)
+                  {
+                      outputWriter.write(response);
+                      outputWriter.flush();
+                  }
+                  outputWriter.close();
+              }
+          }catch (Exception e)
+          {
+              System.err.println("Unable to receive message from client");
+              e.printStackTrace();
+          }finally
+          {
+              if(s != null)
+              {
+                  try
+                  {
+                      s.close();
+                  }catch (Exception e)
+                  {
+                      System.err.println("Unable to close client socket");
+                      e.printStackTrace();
+                  }
+              }
+
+          }
 
       }
 
@@ -168,6 +211,7 @@ public class Server
       {
           isRunning.getAndSet(true);
           ServerSocket tcpServerSocket = null;
+          //TODO: Need to also add udp sockets to listen on
           try
           {
               tcpServerSocket = new ServerSocket(this.tcpPort);
@@ -186,7 +230,7 @@ public class Server
                   if(socket != null)
                   {
                       // Spawn off a new thread to process messages from this client
-                      ClientWorkerThread t = new ClientWorkerThread(socket);
+                      ClientWorkerThread t = new ClientWorkerThread(socket,inventory);
                       new Thread(t).start();
                   }
               }
