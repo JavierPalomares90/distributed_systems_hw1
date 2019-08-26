@@ -99,12 +99,12 @@ public class Client {
       //Send message
       byte[] payload = new byte[command.length()];
       payload = command.getBytes();
-      InetAddress inetAddy = InetAddress.getByName(hostAddress);
+      InetAddress inetAdd = InetAddress.getByName(hostAddress);
       // Let the OS pick an outbound port
       DatagramSocket udpOutboundSocket = new DatagramSocket();
       // Listen on UDP port for inbound
       DatagramSocket udpInboundSocket = new DatagramSocket(port);
-      DatagramPacket sPacket = new DatagramPacket(payload, payload.length, inetAddy, port);
+      DatagramPacket sPacket = new DatagramPacket(payload, payload.length, inetAdd, port);
       udpOutboundSocket.send(sPacket);
       udpOutboundSocket.close();
 
@@ -114,7 +114,8 @@ public class Client {
       udpInboundSocket.receive(rPacket);
       String msgData = new String(rPacket.getData());                            
       msgData = msgData.trim();
-      System.out.println(msgData);  
+      // Print the response
+      System.out.println(msgData);
       udpInboundSocket.close();
     } catch(Exception e)
     {

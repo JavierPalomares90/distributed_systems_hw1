@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -20,6 +21,11 @@ public class Server
     {
         int id = orderId.getAndIncrement();
         Order o = new Order(id,userName,productName,quantity);
+        if(orders == null)
+        {
+            orders = new ArrayList<>();
+        }
+        orders.add(o);
         return o;
     }
 
