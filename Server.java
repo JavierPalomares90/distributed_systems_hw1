@@ -1,9 +1,12 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -125,12 +128,29 @@ public class Server
       }
   }
 
+  private static class ClientWorkerThread implements  Runnable
+  {
+      Socket s;
+      public ClientWorkerThread(Socket s)
+      {
+          this.s = s;
+      }
+
+      public void run()
+      {
+          //TODO: Complete impl
+
+      }
+
+  }
+
 
   private static class ServerThread implements Runnable
   {
       private int tcpPort;
       private int udpPort;
       private Set<Item> inventory;
+      private AtomicBoolean isRunning = new AtomicBoolean(false);
 
       public ServerThread(int tcpPort, int udpPort, Set<Item> inventory)
       {
@@ -139,8 +159,67 @@ public class Server
           this.inventory = inventory;
       }
 
-      public void run(){
-          //TODO: Finish impl
+      public void stop()
+      {
+          isRunning.getAndSet(false);
+      }
+
+      public void run()
+      {
+          isRunning.getAndSet(true);
+          ServerSocket tcpServerSocket = null;
+          try
+          {
+              tcpServerSocket = new ServerSocket(this.tcpPort);
+              while(isRunning.get() == true)
+              {
+                  Socket socket = null;
+                  try
+                  {
+                      // Open a new socket with clients
+                      socket = tcpServerSocket.accept();
+                  }catch(Exception e)
+                  {
+                      System.err.println("Unable to accept new client connection");
+                      e.printStackTrace();
+                  }
+                  if(socket != null)
+                  {
+                      // Spawn off a new thread to process messages from this client
+                      ClientWorkerThread t = new ClientWorkerThread(socket);
+                      new Thread(t).start();
+                  }
+              }
+
+          }catch (Exception e)
+          {
+              System.err.println("Unable to accept client connections");
+              e.printStackTrace();
+          }finally {
+              if (tcpServerSocket != null)
+              {
+                  try
+                  {
+                      tcpServerSocket.close();
+                  }catch (Exception e)
+                  {
+                      System.err.println("Unable to close tcp server socket");
+                      e.printStackTrace();
+                  }
+              }
+              if (tcpServerSocket != null)
+              {
+                  try
+                  {
+                      tcpServerSocket.close();
+                  }catch (Exception e)
+                  {
+                      System.err.println("Unable to close tcp socket");
+                      e.printStackTrace();
+                  }
+              }
+          }
+
       }
 
 
