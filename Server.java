@@ -249,6 +249,7 @@ public class Server
       {
           String[] tokens = msg.trim().split("\\s+");
           String response = null;
+          // TODO: Reverse these comparisons
           if (tokens[0].equals("purchase")) {
               response = purchaseMsg(tokens);
           } else if (tokens[0].equals("cancel")) {

@@ -212,6 +212,7 @@ public class Client {
       {
         // Send a command to the server
         String command = null;
+        // TODO: Reverse these comparisons
         if (tokens[0].equals("purchase")) {
           command = getPurchaseCmd(tokens);
         } else if (tokens[0].equals("cancel")) {
