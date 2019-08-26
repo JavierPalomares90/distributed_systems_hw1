@@ -3,14 +3,25 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Server
 {
-    private Set<Item> inventory;
+    private static Set<Item> inventory;
+    private static List<Order> orders;
+    private static AtomicInteger orderId = new AtomicInteger(1);
+
+    private synchronized static Order createAndAddOrder(String userName, String productName, int quantity)
+    {
+        int id = orderId.getAndIncrement();
+        Order o = new Order(id,userName,productName,quantity);
+        return o;
+    }
 
   private static Set<Item> parseInventoryFile(String fileName)
   {
@@ -73,11 +84,36 @@ public class Server
     String fileName = args[2];
 
     // parse the inventory file
-    Set<Item> inventory = parseInventoryFile(fileName);
+    inventory = parseInventoryFile(fileName);
 
     // Parse messages from clients
     ServerThread s = new ServerThread(tcpPort,udpPort,inventory);
     new Thread(s).start();
+
+  }
+
+  private static class Order
+  {
+      int orderId;
+      String userName;
+      String productName;
+      int productQuantity;
+      // Set to false once orders are cancelled
+      AtomicBoolean validOrder;
+
+      public Order(int orderId, String userName, String productName, int productQuantity)
+      {
+          this.orderId = orderId;
+          this.userName = userName;
+          this.productName = productName;
+          this.productQuantity = productQuantity;
+          validOrder = new AtomicBoolean(true);
+      }
+
+      public String toString()
+      {
+          return this.orderId + " " + this.userName + " " + this.productName + " " + this.productQuantity;
+      }
 
   }
 
@@ -116,7 +152,7 @@ public class Server
           if(toPurchase > currQuantity)
           {
               lock.unlock();
-              throw new InvalidParameterException("Not enough items to buy purchase");
+              throw new InvalidParameterException("Not enough items to buy of item " + this.name);
           }
           // Update the new quantity
           quantity = quantity - toPurchase;
@@ -136,11 +172,95 @@ public class Server
           this.inventory = inventory;
       }
 
-      private String processMessage(String msg)
+      private String purchaseMsg(String[] tokens)
       {
+          if(tokens == null || tokens.length < 4)
+          {
+              return null;
+          }
+          String userName = tokens[1];
+          String productName = tokens[2];
+          Integer quantity;
+          try
+          {
+              quantity = Integer.parseInt(tokens[3]);
+          }catch(NumberFormatException e)
+          {
+              System.err.println("Unable to parse quantity for purchase");
+              e.printStackTrace();
+              return null;
+          }
+          // Search for the item in the inventory
+          for (Item i: inventory)
+          {
+              if (productName.equals(i.name))
+              {
+                  // try to purchase the given quantity of i
+                  try
+                  {
+                      i.purchaseQuantiy(quantity);
+                  }catch (Exception e)
+                  {
+                      e.printStackTrace();
+                      return "Not Available - Not enough items.";
+                  }
+                  // Create an order and add it to the list
+                  //
+                  Order o = Server.createAndAddOrder(userName,productName,quantity);
+                  return "Your order has been placed " + o.toString();
+              }
+          }
+
+          // Did not find the item
+          return "Not Available - We do not sell this product.";
+      }
+
+      private String cancelMsg(String[] tokens)
+      {
+          if(tokens == null || tokens.length < 2)
+          {
+              return null;
+          }
           //TODO: Complete impl
           return null;
+      }
 
+      private String searchMsg(String[] tokens)
+      {
+          if(tokens == null || tokens.length < 2)
+          {
+              return null;
+          }
+          //TODO: Complete impl
+          return null;
+      }
+
+      private String listMsg(String[] tokens)
+      {
+          if(tokens == null || tokens.length < 1)
+          {
+              return null;
+          }
+          //TODO: Complete impl
+          return null;
+      }
+
+      private String processMessage(String msg)
+      {
+          String[] tokens = msg.trim().split("\\s+");
+          String response = null;
+          if (tokens[0].equals("purchase")) {
+              response = purchaseMsg(tokens);
+          } else if (tokens[0].equals("cancel")) {
+              response = cancelMsg(tokens);
+          } else if (tokens[0].equals("search")) {
+              response = searchMsg(tokens);
+          } else if (tokens[0].equals("list")) {
+              response = listMsg(tokens);
+          } else {
+              System.out.println("Invalid command: " + tokens[0]);
+          }
+          return response;
       }
 
       public void run()

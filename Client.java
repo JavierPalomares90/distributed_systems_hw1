@@ -36,7 +36,7 @@ public class Client {
   {
       if (tokens.length < 4)
       {
-        System.out.println("Usage: purchase <user-name> <product-name> <quantity>");
+        System.err.println("Usage: purchase <user-name> <product-name> <quantity>");
         return null;
       }
       String userName = tokens[1];
@@ -59,7 +59,7 @@ public class Client {
   {
       if (tokens.length < 2)
       {
-        System.out.println("Usage: cancel <order-id>");
+        System.err.println("Usage: cancel <order-id>");
         return null;
       }
       String orderId = tokens[1];
@@ -71,7 +71,7 @@ public class Client {
   {
       if (tokens.length < 2)
       {
-        System.out.println("Usage: cancel <order-id>");
+        System.err.println("Usage: cancel <order-id>");
         return null;
       }
       String userName = tokens[1];
@@ -82,9 +82,9 @@ public class Client {
 
   private static String getListCmd(String[] tokens)
   {
-      if (tokens.length < 2)
+      if (tokens.length < 1)
       {
-        System.out.println("Usage: list");
+        System.err.println("Usage: list");
         return null;
       }
       String cmd = "list";
@@ -197,7 +197,7 @@ public class Client {
     Scanner sc = new Scanner(System.in);
     while(sc.hasNextLine()) {
       String cmd = sc.nextLine();
-      String[] tokens = cmd.split(" ");
+      String[] tokens = cmd.split("\\s+");
 
       if (tokens[0].equals("setmode")) {
         // Set the ip protocol mode
@@ -221,7 +221,7 @@ public class Client {
         } else if (tokens[0].equals("list")) {
           command = getListCmd(tokens);
         } else {
-          System.out.println("ERROR: No such command");
+          System.err.println("Invalid command: " + tokens[0]);
         }
         // Send the command if it's not null
         if (command != null)
