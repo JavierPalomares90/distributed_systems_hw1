@@ -136,7 +136,7 @@ public class Server
           this.inventory = inventory;
       }
 
-      private String processMessage(String[] msg)
+      private String processMessage(String msg)
       {
           //TODO: Complete impl
           return null;
@@ -154,8 +154,8 @@ public class Server
               PrintWriter outputWriter = new PrintWriter(s.getOutputStream(), autoFlush);
               String inputLine = inputReader.readLine();
               if (inputLine != null && inputLine.length() > 0) {
-                  String[] msgArray = inputLine.split("\\s+");
-                  String response = processMessage(msgArray);
+                  String msg = inputLine;
+                  String response = processMessage(msg);
                   if(response != null)
                   {
                       outputWriter.write(response);
