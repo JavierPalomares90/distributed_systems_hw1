@@ -227,8 +227,27 @@ public class Server
           {
               return null;
           }
-          //TODO: Complete impl
-          return null;
+          Integer orderId;
+          try
+          {
+              orderId = Integer.parseInt(tokens[1]);
+          }catch(NumberFormatException e)
+          {
+              System.err.println("Unable to parse orderId for cancellation");
+              e.printStackTrace();
+              return null;
+          }
+          // Search for the order and mark it as invalid
+          for (Order o: orders)
+          {
+              if(o.orderId == orderId.intValue())
+              {
+                  o.validOrder.getAndSet(false);
+                  return "Order " + orderId + " is canceled";
+
+              }
+          }
+          return orderId + " is not found, no such order";
       }
 
       private String searchMsg(String[] tokens)
