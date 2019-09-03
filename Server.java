@@ -265,15 +265,34 @@ public class Server
           {
               if(o.orderId == orderId.intValue())
               {
-                  o.validOrder.getAndSet(false);
-                  return "Order " + orderId + " is canceled";
-
+                  int quantity = o.productQuantity;
+                  String productName = o.productName;
+                  // The index of the product in the inventory list
+                  int index  = Collections.binarySearch(inventory, new Item(productName,quantity), Item.itemComparator);
+                  if(index < 0)
+                  {
+                      // product is not in the inventory
+                      return "Unable to cancel order with id " + orderId;
+                  }
+                  // Increase the quantity of the item in the order and cancel the order
+                  Item invItem = inventory.get(index);
+                  try
+                  {
+                      invItem.purchaseQuantiy(-1 * quantity);
+                      o.validOrder.getAndSet(false);
+                      return "Order " + orderId + " is canceled";
+                  }catch (Exception e)
+                  {
+                      System.err.println("Unable to cancel order with id " + orderId);
+                      e.printStackTrace();
+                      return "Unable to cancel order with id " + orderId;
+                  }
               }
           }
           return orderId + " is not found, no such order";
       }
 
-      private String searchMsg(String[] tokens)
+     private String searchMsg(String[] tokens)
       {
           if(tokens == null || tokens.length < 2)
           {
@@ -284,7 +303,8 @@ public class Server
           // Search for the orders with the given username
           for (Order o: orders)
           {
-              if(o.userName.equals(userName))
+              // Add orders if the user name matches and it's a valid order
+              if(o.userName.equals(userName) && o.validOrder.get() == true)
               {
                   // Add it to the response
                   if(response == null)
