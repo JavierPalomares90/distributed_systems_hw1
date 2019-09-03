@@ -261,7 +261,7 @@ public class Server
           String userName = tokens[1];
 
           boolean found = 0;
-          String response = null;
+          String response = "";
 
           // Search all orders for those with username, if not already found, mark as found
           // Add all orders/info to response
@@ -286,7 +286,7 @@ public class Server
           {
               return null;
           }
-          String response = null;
+          String response = "";
 
           // Add all items and quantity to response
           for (Item i: inventory)
