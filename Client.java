@@ -16,6 +16,7 @@ public class Client {
   private static final String CANCEL = "cancel";
   private static final String SEARCH = "search";
   private static final String LIST = "list";
+  private static final String SET_MODE ="setmode";
 
         private static String setMode(String[] tokens)
   {
@@ -204,7 +205,8 @@ public class Client {
       String cmd = sc.nextLine();
       String[] tokens = cmd.split("\\s+");
 
-      if (tokens[0].equals("setmode")) {
+      if (SET_MODE.equals(tokens[0]))
+      {
         // Set the ip protocol mode
         String mode = setMode(tokens);
         if(mode != null)

@@ -308,7 +308,12 @@ public class Server
           {
               return null;
           }
-          return inventory.toString();
+          String response = "";
+          for (Item i: inventory)
+          {
+              response += i.name + " " + i.quantity + "\n";;
+          }
+          return response;
       }
 
       private String processMessage(String msg)
