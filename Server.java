@@ -2,10 +2,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -13,7 +10,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Server
 {
-    private static Set<Item> inventory;
+    private static List<Item> inventory;
     private static List<Order> orders;
     private static AtomicInteger orderId = new AtomicInteger(1);
     private static final String PURCHASE = "purchase";
@@ -33,7 +30,7 @@ public class Server
         return o;
     }
 
-  private static Set<Item> parseInventoryFile(String fileName)
+  private static List<Item> parseInventoryFile(String fileName)
   {
 
 
@@ -49,7 +46,7 @@ public class Server
           FileReader invFile = new FileReader(fileName);
           BufferedReader invBuff = new BufferedReader(invFile);
           String invLine = null;
-          Set<Item> items = new HashSet<>();
+          List<Item> items = new ArrayList<>();
           while ((invLine = invBuff.readLine()) != null)
           {
               if (invLine.length() > 0)
@@ -60,7 +57,6 @@ public class Server
                       try
                       {
                           Item newItem = new Item(itemArr[0], Integer.parseInt(itemArr[1]));
-                          //TODO: Add in sorted order
                           items.add(newItem);
                       }catch (Exception e)
                       {
@@ -70,13 +66,14 @@ public class Server
                   }
               }
           }
+          Collections.sort(items,Item.itemComparator);
           return items;
       }catch(IOException e)
       {
           System.err.println("Unable to read inventory file");
           e.printStackTrace();
       }
-      return new HashSet<>();
+      return new ArrayList<>();
   }
 
   public static void main (String[] args) {
@@ -171,13 +168,34 @@ public class Server
           lock.unlock();
 
       }
+
+      public static Comparator<Item> itemComparator = new Comparator<Item>()
+      {
+          @Override
+          public int compare(Item item1, Item item2)
+          {
+              if (item1 == null)
+              {
+                  if (item2 == null)
+                  {
+                      return 0;
+                  }
+                  return 1;
+              }
+              if(item2 == null)
+              {
+                  return -1;
+              }
+              return item1.name.compareTo(item2.name);
+          }
+      };
   }
 
   private static class ClientWorkerThread implements  Runnable
   {
       Socket s;
-      Set<Item> inventory;
-      public ClientWorkerThread(Socket s,Set<Item> inventory)
+      List<Item> inventory;
+      public ClientWorkerThread(Socket s,List<Item> inventory)
       {
           this.s = s;
           this.inventory = inventory;
@@ -365,10 +383,10 @@ public class Server
   {
       private int tcpPort;
       private int udpPort;
-      private Set<Item> inventory;
+      private List<Item> inventory;
       private AtomicBoolean isRunning = new AtomicBoolean(false);
 
-      public ServerThread(int tcpPort, int udpPort, Set<Item> inventory)
+      public ServerThread(int tcpPort, int udpPort, List<Item> inventory)
       {
           this.tcpPort = tcpPort;
           this.udpPort = udpPort;
