@@ -16,6 +16,10 @@ public class Server
     private static Set<Item> inventory;
     private static List<Order> orders;
     private static AtomicInteger orderId = new AtomicInteger(1);
+    private static final String PURCHASE = "purchase";
+    private static final String CANCEL = "cancel";
+    private static final String SEARCH = "search";
+    private static final String LIST = "list";
 
     private synchronized static Order createAndAddOrder(String userName, String productName, int quantity)
     {
@@ -56,6 +60,7 @@ public class Server
                       try
                       {
                           Item newItem = new Item(itemArr[0], Integer.parseInt(itemArr[1]));
+                          //TODO: Add in sorted order
                           items.add(newItem);
                       }catch (Exception e)
                       {
@@ -256,8 +261,27 @@ public class Server
           {
               return null;
           }
-          //TODO: Complete impl
-          return null;
+          String userName = tokens[1];
+          String response = null;
+          // Search for the orders with the given username
+          for (Order o: orders)
+          {
+              if(o.userName.equals(userName))
+              {
+                  // Add it to the response
+                  if(response == null)
+                  {
+                      response = "";
+                  }
+                  response += o.toString();
+              }
+          }
+          // No orders found
+          if(response == null)
+          {
+              return "No order found for " + userName;
+          }
+          return response;
       }
 
       private String listMsg(String[] tokens)
@@ -266,22 +290,25 @@ public class Server
           {
               return null;
           }
-          //TODO: Complete impl
-          return null;
+          return inventory.toString();
       }
 
       private String processMessage(String msg)
       {
           String[] tokens = msg.trim().split("\\s+");
           String response = null;
-          // TODO: Reverse these comparisons
-          if (tokens[0].equals("purchase")) {
+          if(PURCHASE.equals(tokens[0]))
+          {
               response = purchaseMsg(tokens);
-          } else if (tokens[0].equals("cancel")) {
+          } else if (CANCEL.equals(tokens[0]))
+          {
               response = cancelMsg(tokens);
-          } else if (tokens[0].equals("search")) {
+          } else if (SEARCH.equals(tokens[0]))
+          {
               response = searchMsg(tokens);
-          } else if (tokens[0].equals("list")) {
+          }
+           else if (LIST.equals(tokens[0]))
+          {
               response = listMsg(tokens);
           } else {
               System.out.println("Invalid command: " + tokens[0]);

@@ -11,9 +11,13 @@ public class Client {
 
   private static final String TCP_MODE = "T";
   private static final String UDP_MODE = "U";
-  private static int BUF_LEN = 1024;
+  private static final int BUF_LEN = 1024;
+  private static final String PURCHASE = "purchase";
+  private static final String CANCEL = "cancel";
+  private static final String SEARCH = "search";
+  private static final String LIST = "list";
 
-  private static String setMode(String[] tokens)
+        private static String setMode(String[] tokens)
   {
       if (tokens.length < 2)
       {
@@ -213,14 +217,17 @@ public class Client {
       {
         // Send a command to the server
         String command = null;
-        // TODO: Reverse these comparisons
-        if (tokens[0].equals("purchase")) {
+        if(PURCHASE.equals(tokens[0]))
+        {
           command = getPurchaseCmd(tokens);
-        } else if (tokens[0].equals("cancel")) {
+        } else if (CANCEL.equals(tokens[0]))
+        {
           command = getCancelCmd(tokens);
-        } else if (tokens[0].equals("search")) {
+        } else if (SEARCH.equals(tokens[0]))
+        {
           command = getSearchCmd(tokens);
-        } else if (tokens[0].equals("list")) {
+        } else if (LIST.equals(tokens[0]))
+        {
           command = getListCmd(tokens);
         } else {
           System.err.println("Invalid command: " + tokens[0]);
