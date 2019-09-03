@@ -291,7 +291,7 @@ public class Server
                   {
                       response = "";
                   }
-                  response += o.toString();
+                  response += o.toString() + "\n";
               }
           }
           // No orders found

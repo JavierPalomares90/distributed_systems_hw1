@@ -80,7 +80,7 @@ public class Client {
         return null;
       }
       String userName = tokens[1];
-      String cmd = "search" + userName;
+      String cmd = "search " + userName;
       return cmd;
 
   }
@@ -140,7 +140,7 @@ public class Client {
         PrintWriter outputWriter = new PrintWriter(tcpSocket.getOutputStream(), true);
         BufferedReader inputReader = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
         // Write the purchase message
-        outputWriter.write(command);
+        outputWriter.write(command + "\n");
         outputWriter.flush();
 
         // Wait for the response from the server
@@ -155,12 +155,11 @@ public class Client {
           }
           // Print the response
           System.out.println(response);
-          tcpSocket.close();
         }
 
       }catch(Exception e)
       {
-        System.err.println("Unable to send purchase order");
+        System.err.println("Unable to send order");
         e.printStackTrace();
       }finally
       {
