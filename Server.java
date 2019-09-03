@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.ServerSocket;
+import java.net.DatagramSocket;
 import java.net.Socket;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -16,10 +17,6 @@ public class Server
     private static Set<Item> inventory;
     private static List<Order> orders;
     private static AtomicInteger orderId = new AtomicInteger(1);
-    private static final String PURCHASE = "purchase";
-    private static final String CANCEL = "cancel";
-    private static final String SEARCH = "search";
-    private static final String LIST = "list";
 
     private synchronized static Order createAndAddOrder(String userName, String productName, int quantity)
     {
@@ -60,7 +57,6 @@ public class Server
                       try
                       {
                           Item newItem = new Item(itemArr[0], Integer.parseInt(itemArr[1]));
-                          //TODO: Add in sorted order
                           items.add(newItem);
                       }catch (Exception e)
                       {
@@ -218,7 +214,7 @@ public class Server
                   // Create an order and add it to the list
                   //
                   Order o = Server.createAndAddOrder(userName,productName,quantity);
-                  return "Your order has been placed " + o.toString();
+                  return "Your order has been placed, " + o.toString();
               }
           }
 
@@ -261,27 +257,27 @@ public class Server
           {
               return null;
           }
+
           String userName = tokens[1];
+
+          boolean found = 0;
           String response = null;
-          // Search for the orders with the given username
+
+          // Search all orders for those with username, if not already found, mark as found
+          // Add all orders/info to response
           for (Order o: orders)
           {
-              if(o.userName.equals(userName))
+              if(o.userName == userName)
               {
-                  // Add it to the response
-                  if(response == null)
-                  {
-                      response = "";
-                  }
-                  response += o.toString();
+                  if(found == 0)
+                      found = 1;
+                  response.concat(o.orderID + " " + o.productName + " " + o.productQuantity + "/n");
               }
           }
-          // No orders found
-          if(response == null)
-          {
+          if (found == 0)
               return "No order found for " + userName;
-          }
-          return response;
+          else
+              return response;
       }
 
       private String listMsg(String[] tokens)
@@ -290,25 +286,30 @@ public class Server
           {
               return null;
           }
-          return inventory.toString();
+          String response = null;
+
+          // Add all items and quantity to response
+          for (Item i: inventory)
+          {
+              response.concat(i.name + " " + i.quantity + "/n");
+
+          }
+
+          return response;
       }
 
       private String processMessage(String msg)
       {
           String[] tokens = msg.trim().split("\\s+");
           String response = null;
-          if(PURCHASE.equals(tokens[0]))
-          {
+          // TODO: Reverse these comparisons
+          if (tokens[0].equals("purchase")) {
               response = purchaseMsg(tokens);
-          } else if (CANCEL.equals(tokens[0]))
-          {
+          } else if (tokens[0].equals("cancel")) {
               response = cancelMsg(tokens);
-          } else if (SEARCH.equals(tokens[0]))
-          {
+          } else if (tokens[0].equals("search")) {
               response = searchMsg(tokens);
-          }
-           else if (LIST.equals(tokens[0]))
-          {
+          } else if (tokens[0].equals("list")) {
               response = listMsg(tokens);
           } else {
               System.out.println("Invalid command: " + tokens[0]);
@@ -384,10 +385,13 @@ public class Server
       {
           isRunning.getAndSet(true);
           ServerSocket tcpServerSocket = null;
-          //TODO: Need to also add udp sockets to listen on
+          // TODO: Add UDP
+          DatagramSocket udpDatagramSocket = null;
+
           try
           {
               tcpServerSocket = new ServerSocket(this.tcpPort);
+              udpDatagramSocket = new DatagramSocket(this.udpPort);
               while(isRunning.get() == true)
               {
                   Socket socket = null;
