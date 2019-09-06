@@ -97,37 +97,36 @@ public class Client {
 
   }
 
-  private static void sendCmdOverUdp(String command, String hostAddress, int port)
-  {
-    try
+    private static void sendCmdOverUdp(String command, String hostAddress, int port)
     {
-      //Send message
-      byte[] payload = new byte[command.length()];
-      payload = command.getBytes();
-      InetAddress inetAdd = InetAddress.getByName(hostAddress);
-      // Let the OS pick an outbound port
-      DatagramSocket udpOutboundSocket = new DatagramSocket();
-      // Listen on UDP port for inbound
-      DatagramSocket udpInboundSocket = new DatagramSocket(port);
-      DatagramPacket sPacket = new DatagramPacket(payload, payload.length, inetAdd, port);
-      udpOutboundSocket.send(sPacket);
-      udpOutboundSocket.close();
+        try
+        {
+            //Send message
+            byte[] payload;
+            payload = command.getBytes();
+            InetAddress inetAdd = InetAddress.getByName(hostAddress);
+            // Let the OS pick a port
+            DatagramSocket udpSocket = new DatagramSocket();
+            // Send command to udpPort on server
+            DatagramPacket sPacket = new DatagramPacket(payload, payload.length, inetAdd, port);
+            udpSocket.send(sPacket);
 
-      //Receive Reply:
-      byte[] udpBuff = new byte[BUF_LEN];
-      DatagramPacket rPacket = new DatagramPacket(udpBuff,udpBuff.length);
-      udpInboundSocket.receive(rPacket);
-      String msgData = new String(rPacket.getData());                            
-      msgData = msgData.trim();
-      // Print the response
-      System.out.println(msgData);
-      udpInboundSocket.close();
-    } catch(Exception e)
-    {
-      System.err.println("Unable to send message over udp");
-      e.printStackTrace();
-    }
+            //Receive Reply:
+            byte[] udpBuff = new byte[BUF_LEN];
+            DatagramPacket rPacket = new DatagramPacket(udpBuff,udpBuff.length);
+            udpSocket.receive(rPacket);
+            String msgData = new String(rPacket.getData());
+            msgData = msgData.trim();
+            // Print the response
+            System.out.println(msgData);
+            udpSocket.close();
+        } catch(Exception e)
+        {
+            System.err.println("Unable to send message over udp");
+            e.printStackTrace();
+        }
   }
+
 
   private static void sendCmdOverTcp(String command, String hostAddress, int port)
   {
