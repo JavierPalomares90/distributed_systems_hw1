@@ -1,6 +1,8 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.DatagramSocket;
+import java.net.DatagramPacket;
 import java.security.InvalidParameterException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -95,8 +97,10 @@ public class Server
     inventory = parseInventoryFile(fileName);
 
     // Parse messages from clients
-    ServerThread s = new ServerThread(tcpPort,udpPort,inventory);
-    new Thread(s).start();
+    ServerThread tcpServer = new TcpServerThread(tcpPort,inventory);
+    ServerThread udpServer = new DatagramServerThread(udpPort,inventory);
+    new Thread(tcpServer).start();
+    new Thread(udpServer).start();
 
   }
 
@@ -404,17 +408,15 @@ public class Server
   }
 
 
-  private static class ServerThread implements Runnable
+  private static abstract class ServerThread implements Runnable
   {
-      private int tcpPort;
-      private int udpPort;
-      private List<Item> inventory;
-      private AtomicBoolean isRunning = new AtomicBoolean(false);
+      int port;
+      List<Item> inventory;
+      AtomicBoolean isRunning = new AtomicBoolean(false);
 
-      public ServerThread(int tcpPort, int udpPort, List<Item> inventory)
+      public ServerThread(int port, List<Item> inventory)
       {
-          this.tcpPort = tcpPort;
-          this.udpPort = udpPort;
+          this.port = port;
           this.inventory = inventory;
       }
 
@@ -423,15 +425,88 @@ public class Server
           isRunning.getAndSet(false);
       }
 
+  }
+
+  private static class DatagramServerThread extends ServerThread
+  {
+      public DatagramServerThread(int port, List<Item> inventory)
+      {
+          super(port, inventory);
+      }
+      
       public void run()
       {
-          isRunning.getAndSet(true);
+        this.isRunning.getAndSet(true);
+        DatagramPacket receivePacket, returnPacket;
+        int len = 1024;
+
+        try 
+        {
+            while(true) 
+            {
+                int udpPort = this.port;
+                // Assign inbound port and listen
+                DatagramSocket inboundSocket = new DatagramSocket(udpPort);
+                byte[] buf = new byte[len];
+
+                try 
+                {
+                    // Receive command and close inbound socket
+                    receivePacket = new DatagramPacket(buf, buf.length);
+                    // TODO: Spawn off a new thread for every client.
+                    inboundSocket.receive(receivePacket);
+                    inboundSocket.close();
+
+                    // Parse command and process
+                    if (receivePacket.getData() != null) {
+
+                        String msg = new String(receivePacket.getData());
+                        String response = null; // TODO: process from client thread processMessage(msg);
+                        byte[] byteResponse = response.getBytes();
+
+                        // Send response back to client and close outbound socket
+                        if (response != null) {
+                            // Allow OS to assign outbound port
+                            DatagramSocket outboundSocket = new DatagramSocket();
+
+                            returnPacket = new DatagramPacket(byteResponse,
+                                    byteResponse.length,
+                                    receivePacket.getAddress(),
+                                    receivePacket.getPort());
+                            outboundSocket.send(returnPacket);
+                            outboundSocket.close();
+                        }
+                    }
+                } catch (IOException e) 
+                {
+                    System.err.println(e);
+                }
+            }
+
+            } catch (Exception e)
+            {
+                System.err.println("Unable to receive message from client");
+                e.printStackTrace();
+            }
+      }
+
+  }
+
+  private static class TcpServerThread extends ServerThread
+  {
+      public TcpServerThread(int port, List<Item> inventory)
+      {
+          super(port,inventory);
+      }
+
+      public void run()
+      {
+          this.isRunning.getAndSet(true);
           ServerSocket tcpServerSocket = null;
-          //TODO: Need to also add udp sockets to listen on
           try
           {
-              tcpServerSocket = new ServerSocket(this.tcpPort);
-              while(isRunning.get() == true)
+              tcpServerSocket = new ServerSocket(this.port);
+              while(this.isRunning.get() == true)
               {
                   Socket socket = null;
                   try
@@ -472,6 +547,7 @@ public class Server
                   try
                   {
                       tcpServerSocket.close();
+                      this.isRunning.getAndSet(false);
                   }catch (Exception e)
                   {
                       System.err.println("Unable to close tcp socket");
