@@ -195,15 +195,10 @@ public class Server
       };
   }
 
-  private static class ClientWorkerThread implements  Runnable
+  private static abstract class ClientWorkerThread implements  Runnable
   {
       Socket s;
       List<Item> inventory;
-      public ClientWorkerThread(Socket s,List<Item> inventory)
-      {
-          this.s = s;
-          this.inventory = inventory;
-      }
 
       private String purchaseMsg(String[] tokens)
       {
@@ -340,7 +335,7 @@ public class Server
           return response;
       }
 
-      private String processMessage(String msg)
+      public String processMessage(String msg)
       {
           String[] tokens = msg.trim().split("\\s+");
           String response = null;
@@ -361,6 +356,65 @@ public class Server
               System.out.println("Invalid command: " + tokens[0]);
           }
           return response;
+      }
+
+
+  }
+
+  private static class DatagramClientWorkerThread extends ClientWorkerThread
+  {
+      private static int BUF_LEN = 1024;
+      private DatagramPacket receivePacket;
+
+      public DatagramClientWorkerThread(DatagramPacket packet)
+      {
+          this.receivePacket = packet;
+      }
+
+      public void run()
+      {
+
+          int len = BUF_LEN;
+          byte[] buf = new byte[len];
+
+          try 
+          {
+              // Parse command and process
+              if (this.receivePacket.getData() != null)
+              {
+                  String msg = new String(this.receivePacket.getData());
+                  String response = processMessage(msg);
+                  byte[] byteResponse = response.getBytes();
+
+                  // Send response back to client and close outbound socket
+                  if (response != null) {
+                      // Allow OS to assign outbound port
+                      DatagramSocket outboundSocket = new DatagramSocket();
+
+                      DatagramPacket returnPacket = new DatagramPacket(byteResponse,
+                              byteResponse.length,
+                              receivePacket.getAddress(),
+                              receivePacket.getPort());
+                      outboundSocket.send(returnPacket);
+                      outboundSocket.close();
+                  }
+              }
+            } catch (IOException e) 
+            {
+                System.err.println("Unable to parse datagram");
+                e.printStackTrace();
+            }
+
+      }
+
+  }
+
+  private static class TcpClientWorkerThread extends ClientWorkerThread
+  {
+      public TcpClientWorkerThread(Socket s,List<Item> inventory)
+      {
+          this.s = s;
+          this.inventory = inventory;
       }
 
       public void run()
@@ -406,8 +460,6 @@ public class Server
       }
 
   }
-
-
   private static abstract class ServerThread implements Runnable
   {
       int port;
@@ -453,33 +505,17 @@ public class Server
                 {
                     // Receive command and close inbound socket
                     receivePacket = new DatagramPacket(buf, buf.length);
-                    // TODO: Spawn off a new thread for every client.
                     inboundSocket.receive(receivePacket);
                     inboundSocket.close();
+                    // Spawn off a new thread to parse message
+                    ClientWorkerThread client = new DatagramClientWorkerThread(receivePacket);
+                    Thread t = new Thread(client);
+                    t.start();
 
-                    // Parse command and process
-                    if (receivePacket.getData() != null) {
-
-                        String msg = new String(receivePacket.getData());
-                        String response = null; // TODO: process from client thread processMessage(msg);
-                        byte[] byteResponse = response.getBytes();
-
-                        // Send response back to client and close outbound socket
-                        if (response != null) {
-                            // Allow OS to assign outbound port
-                            DatagramSocket outboundSocket = new DatagramSocket();
-
-                            returnPacket = new DatagramPacket(byteResponse,
-                                    byteResponse.length,
-                                    receivePacket.getAddress(),
-                                    receivePacket.getPort());
-                            outboundSocket.send(returnPacket);
-                            outboundSocket.close();
-                        }
-                    }
                 } catch (IOException e) 
                 {
-                    System.err.println(e);
+                    System.err.println("Unable to parse client datagram");
+                    e.printStackTrace();
                 }
             }
 
@@ -521,7 +557,7 @@ public class Server
                   if(socket != null)
                   {
                       // Spawn off a new thread to process messages from this client
-                      ClientWorkerThread t = new ClientWorkerThread(socket,inventory);
+                      ClientWorkerThread t = new TcpClientWorkerThread(socket,inventory);
                       new Thread(t).start();
                   }
               }
