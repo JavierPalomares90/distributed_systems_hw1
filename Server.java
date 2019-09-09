@@ -300,6 +300,11 @@ public class Server
           String userName = tokens[1];
           String response = null;
           // Search for the orders with the given username
+          if(orders == null)
+          {
+              // No orders have been made
+              return "No order found for " + userName;
+          }
           for (Order o: orders)
           {
               // Add orders if the user name matches and it's a valid order
