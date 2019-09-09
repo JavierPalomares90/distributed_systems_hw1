@@ -371,9 +371,10 @@ public class Server
       private static int BUF_LEN = 1024;
       private DatagramPacket receivePacket;
 
-      public DatagramClientWorkerThread(DatagramPacket packet)
+      public DatagramClientWorkerThread(DatagramPacket packet,List<Item> inventory)
       {
           this.receivePacket = packet;
+          this.inventory = inventory;
       }
 
       public void run()
@@ -513,7 +514,7 @@ public class Server
                     inboundSocket.receive(receivePacket);
                     inboundSocket.close();
                     // Spawn off a new thread to parse message
-                    ClientWorkerThread client = new DatagramClientWorkerThread(receivePacket);
+                    ClientWorkerThread client = new DatagramClientWorkerThread(receivePacket,inventory);
                     Thread t = new Thread(client);
                     t.start();
 
