@@ -190,7 +190,8 @@ public class Server
               {
                   return -1;
               }
-              return item1.name.compareTo(item2.name);
+              // Compare by quantity
+              return (item1.quantity < item2.quantity)? -1 : 1;
           }
       };
   }
